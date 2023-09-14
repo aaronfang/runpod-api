@@ -24,7 +24,7 @@ parser.add_argument('-pd','--persistent_disk_size_gb', type=int, default=50)
 parser.add_argument('-bp','--bid_price', type=float, default=0.19)
 parser.add_argument('-cc','--country_code',default='SK,SE,BE,BG,CA,CZ,FR,NL')
 parser.add_argument('-md','--min_download', type=int, default=600)
-parser.add_argument('-p','--ports', default='22/tcp,7860/http,7861/http,6006/http,8888/http')
+parser.add_argument('-p','--ports', default='8888/http,7860/http,7861/http,6006/http,4444/http,22/tcp')
 parser.add_argument('-e','--user_envs', nargs='*', default=["RUNPOD_STOP_AUTO=1"])
 
 args = parser.parse_args()

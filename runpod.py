@@ -585,8 +585,8 @@ class API(object):
 
 class Endpoints(object):
     def __init__(self):
-        env = dotenv_values('.env')
-        self.API_KEY = env['RUNPOD_API_KEY']
+        # env = dotenv_values('.env')
+        self.API_KEY = os.environ['RUNPOD_API_KEY']
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
