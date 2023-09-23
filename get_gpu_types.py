@@ -2,6 +2,17 @@
 import json
 import runpod
 
+def get_gpu_types():
+    api = runpod.API()
+    response = api.get_gpu_types()
+    resp_json = response.json()
+
+    if response.status_code == 200 and 'errors' not in resp_json:
+        gpu_types = resp_json['data']['gpuTypes']
+        sorted_gpu_types = sorted(gpu_types, key=lambda x: x["memoryInGb"])
+        return sorted_gpu_types
+    else:
+        return []
 
 if __name__ == '__main__':
     runpod = runpod.API()

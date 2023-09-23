@@ -24,13 +24,13 @@ parser.add_argument('-pd','--persistent_disk_size_gb', type=int, default=50)
 parser.add_argument('-bp','--bid_price', type=float, default=0.19)
 parser.add_argument('-cc','--country_code',default='SK,SE,BE,BG,CA,CZ,FR,NL')
 parser.add_argument('-md','--min_download', type=int, default=600)
-parser.add_argument('-p','--ports', default='8888/http,7860/http,7861/http,6006/http,4444/http,22/tcp')
-parser.add_argument('-e','--user_envs', nargs='*', default=["RUNPOD_STOP_AUTO=1"])
+parser.add_argument('-p','--ports', default='8888/http,7860/http,7862/http,7863/http,7864/http,7865/http,6006/http,4444/http,22/tcp')
+parser.add_argument('-e','--user_envs', default="RUNPOD_STOP_AUTO=1")
 
 args = parser.parse_args()
 
-current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-args.name = f'{args.name}-{current_time}'
+current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+args.name = f'{args.name} {current_time}'
 
 # Replace the short GPU type id with the full name
 args.gpu_type_id = gpu_type_map.get(args.gpu_type_id.lower(), args.gpu_type_id)
@@ -73,7 +73,8 @@ else:
                 exit()
 
 # Convert the user envs to a dict
-USER_ENVS = dict(item.split('=') for item in args.user_envs)
+user_envs_list = args.user_envs.split(',')
+USER_ENVS = dict(item.split('=') for item in user_envs_list)
 envs_str = ',\n'.join([f'{{key: "{k}", value: "{v}"}}' for k, v in USER_ENVS.items()])
 
 def create_spot_pod():
@@ -112,9 +113,9 @@ def create_spot_pod():
         print(response.status_code)
         print(json.dumps(resp_json, indent=4, default=str))
 
-    # print current price
-    secure_price, community_price, lowest_price = get_price(args.gpu_type_id)
-    print(f"Current price: {lowest_price}")
+    # # print current price
+    # secure_price, community_price, lowest_price = get_price(args.gpu_type_id)
+    # print(f"Current price: {lowest_price}")
 
     # print(f"spot={args.spot}, cloud_type={args.cloud_type}")
     # print(pod_config)
@@ -158,12 +159,12 @@ def create_on_demand_pod():
             print(json.dumps(resp_json, indent=4, default=str))
             exit()
     
-    # print current price
-    secure_price, community_price, lowest_price = get_price(args.gpu_type_id)
-    if args.cloud_type == 'SECURE':
-        print(f"Current price: {secure_price}")
-    else:
-        print(f"Current price: {community_price}")
+    # # print current price
+    # secure_price, community_price, lowest_price = get_price(args.gpu_type_id)
+    # if args.cloud_type == 'SECURE':
+    #     print(f"Current price: {secure_price}")
+    # else:
+    #     print(f"Current price: {community_price}")
 
     # print(f"spot={args.spot}, cloud_type={args.cloud_type}")
     # print(pod_config)
