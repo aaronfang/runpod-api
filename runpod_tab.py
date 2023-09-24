@@ -6,6 +6,7 @@ import time
 import datetime
 from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QCheckBox, QLabel, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QRadioButton, QButtonGroup, QScrollArea, QHBoxLayout, QGroupBox, QInputDialog, QStyle
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 
 # Add runpod-api to the path
 current_path = os.path.dirname(os.path.abspath(__file__))
@@ -34,7 +35,7 @@ class GPUSelector(QWidget):
         super().__init__()
         self.gpu_types = sorted(get_gpu_types(), key=lambda gpu: gpu['memoryInGb'])
         self.setWindowTitle("Runpod Deployment Tool")
-        self.setMinimumSize(1200, 800)
+        # self.setMinimumSize(1200, 800)
         self.initUI()
 
          # Check for API key
@@ -67,7 +68,7 @@ class GPUSelector(QWidget):
         preset_group = QGroupBox('预设:')
         preset_layout = QHBoxLayout()
         preset_group.setLayout(preset_layout)
-        layout.addWidget(preset_group, 0, 2, 1, 4)
+        layout.addWidget(preset_group, 1, 2, 1, 4)
 
         self.preset_combo = QComboBox()
         self.preset_combo.setMaxVisibleItems(10)
@@ -83,6 +84,16 @@ class GPUSelector(QWidget):
 
         self.load_presets()
 
+        self.image_combo = QComboBox()
+        self.image_combo.setMaxVisibleItems(10)
+        self.image_combo.setFixedHeight(40)
+        layout.addWidget(QLabel('镜像名:'), 1, 0)
+        layout.addWidget(self.image_combo, 1, 1)
+        repo = 'runpod/stable-diffusion'
+        latest_tags = get_latest_tags(repo)
+        for tag in latest_tags:
+            self.image_combo.addItem(tag)
+
         layout.addWidget(QLabel('GPU 信息:'), 2, 0)
         self.gpu_combo = QComboBox()
         self.gpu_combo = CustomComboBox(self)
@@ -90,16 +101,6 @@ class GPUSelector(QWidget):
         self.gpu_combo.setFixedHeight(40)
         self.update_gpu_types()
         layout.addWidget(self.gpu_combo, 2, 1, 1, 3)
-
-        self.image_combo = QComboBox()
-        self.image_combo.setMaxVisibleItems(10)
-        self.image_combo.setFixedHeight(40)
-        layout.addWidget(QLabel('镜像名:'), 1, 2)
-        layout.addWidget(self.image_combo, 1, 3)
-        repo = 'runpod/stable-diffusion'
-        latest_tags = get_latest_tags(repo)
-        for tag in latest_tags:
-            self.image_combo.addItem(tag)
 
         self.cloud_type_group = QButtonGroup(self)
         self.secure_radio = QRadioButton('SECURE')
