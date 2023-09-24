@@ -37,6 +37,30 @@ class GPUSelector(QWidget):
         self.setMinimumSize(1200, 800)
         self.initUI()
 
+         # Check for API key
+        self.api_key = os.getenv('RUNPOD_API_KEY')
+        if not self.api_key:
+            try:
+                with open(preset_json, 'r') as f:
+                    presets = json.load(f)
+                    self.api_key = presets.get('api_key')
+            except FileNotFoundError:
+                pass
+
+        if not self.api_key:
+            self.api_key, ok = QInputDialog.getText(self, 'API Key', '请输入 API Key:')
+            if ok:
+                try:
+                    with open(preset_json, 'r+') as f:
+                        presets = json.load(f)
+                        presets['api_key'] = self.api_key
+                        f.seek(0)
+                        json.dump(presets, f)
+                        f.truncate()
+                except FileNotFoundError:
+                    with open(preset_json, 'w') as f:
+                        json.dump({'api_key': self.api_key}, f)
+
     def initUI(self):
         layout = QGridLayout()
 
@@ -347,7 +371,8 @@ class GPUSelector(QWidget):
             try:
                 with open(preset_json, 'r+') as f:
                     presets = json.load(f)
-                    presets[preset_name] = preset
+                    if preset_name != 'api_key':
+                        presets[preset_name] = preset
                     f.seek(0)
                     json.dump(presets, f)
                     f.truncate()
@@ -369,7 +394,7 @@ class GPUSelector(QWidget):
             return
         with open(preset_json, 'r') as f:
             presets = json.load(f)
-            if preset_name in presets:
+            if preset_name in presets and preset_name != 'api_key':
                 preset = presets[preset_name]
                 for i in range(self.gpu_combo.count()):
                     if self.gpu_combo.itemData(i)['id'] == preset['gpu_type_id']:
