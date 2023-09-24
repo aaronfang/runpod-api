@@ -1,2 +1,4 @@
 httpx
 python-dotenv
+pyqt5
+requests
