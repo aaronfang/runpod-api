@@ -213,6 +213,7 @@ class GPUSelector(QWidget):
                 self.gpu_combo.addItem(gpu_info, gpu)
 
     def create_pod(self):
+        pod_info = {}
         http_ports = [port + '/http' for port in self.http_port_edit.text().split(',')]
         tcp_ports = [port + '/tcp' for port in self.tcp_port_edit.text().split(',')]
         ports = ','.join(http_ports + tcp_ports)
@@ -253,6 +254,9 @@ class GPUSelector(QWidget):
             print(f"Error creating pod: {result.stderr}")
 
     def add_pod_to_status_area(self, pod_info):
+        if not pod_info:
+            return
+        
         pod_group = QGroupBox()
         pod_layout = QHBoxLayout(pod_group)
 
