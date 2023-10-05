@@ -423,7 +423,7 @@ class GPUSelector(QWidget):
         try:
             with open(preset_json, 'r') as f:
                 presets = json.load(f)
-                for preset_name in presets.keys():
+                for preset_name in sorted(presets.keys()):
                     self.preset_combo.addItem(preset_name)
         except FileNotFoundError:
             pass
@@ -431,7 +431,8 @@ class GPUSelector(QWidget):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
+    app.setApplicationDisplayName("Runpod Launcher")
+    
     ex = GPUSelector()
     ex.show()
 

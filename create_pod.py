@@ -74,7 +74,7 @@ else:
 
 # Convert the user envs to a dict
 user_envs_list = args.user_envs.split(',')
-USER_ENVS = dict(item.split('=') for item in user_envs_list)
+USER_ENVS = dict(item.split('=') for item in user_envs_list if '=' in item)
 envs_str = ',\n'.join([f'{{key: "{k}", value: "{v}"}}' for k, v in USER_ENVS.items()])
 
 def create_spot_pod():
