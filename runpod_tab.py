@@ -4,15 +4,14 @@ import json
 import subprocess
 import time
 import datetime
-from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QCheckBox, QLabel, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QRadioButton, QButtonGroup, QScrollArea, QHBoxLayout, QGroupBox, QInputDialog, QStyle
+from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QCheckBox, QLabel, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QRadioButton, QButtonGroup, QScrollArea, QHBoxLayout, QGroupBox, QInputDialog, QStyle, QSpacerItem, QSizePolicy
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
 # Add runpod-api to the path
 current_path = os.path.dirname(os.path.abspath(__file__))
 preset_json = os.path.join(current_path, 'runpod_presets.json')
-api_dir = current_path
-# sys.path.insert(0, api_dir)
+api_key_file = os.path.join(current_path, 'api_key.json')
 
 from get_gpu_types import get_gpu_types
 from get_templates import get_latest_tags
@@ -33,34 +32,74 @@ class CustomComboBox(QComboBox):
 class GPUSelector(QWidget):
     def __init__(self):
         super().__init__()
-        self.gpu_types = sorted(get_gpu_types(), key=lambda gpu: gpu['memoryInGb'])
         self.setWindowTitle("Runpod Deployment Tool")
-        # self.setMinimumSize(1200, 800)
-        self.initUI()
-
-         # Check for API key
-        self.api_key = os.getenv('RUNPOD_API_KEY')
+        
+        # Check for API key
+        self.api_key = self.get_api_key()
         if not self.api_key:
+            self.initApiKeyUI()
+        else:
+            self.initUI()
+
+    def get_api_key(self):
+        api_key = os.getenv('RUNPOD_API_KEY')
+        if not api_key:
             try:
-                with open(preset_json, 'r') as f:
-                    presets = json.load(f)
-                    self.api_key = presets.get('api_key')
+                with open(api_key_file, 'r') as f:
+                    data = json.load(f)
+                    api_key = data.get('RUNPOD_API_KEY')
             except FileNotFoundError:
                 pass
+        return api_key
+        
+    def initApiKeyUI(self):
+        main_layout = QVBoxLayout()
+        layout = QGridLayout()
+        label1 = QLabel('请输入 API Key: ')
+        label2 = QLabel('https://www.runpod.io/console/user/settings')
+        self.api_key_edit = QLineEdit()
+        submit_button = QPushButton('提交')
+        submit_button.setFixedHeight(50)
+        submit_button.clicked.connect(self.submit_api_key)
+        # Add the widgets to the layout
+        layout.addWidget(label1, 0, 1) # The label is in the second column
+        font = QFont()
+        font.setPointSize(12)  # Set font size
+        font.setBold(True)  # Set font weight to bold
+        label1.setFont(font)
+        layout.addWidget(label2, 1, 1) # The label is in the second column
+        label2.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        layout.addWidget(self.api_key_edit, 2, 1) # The text box is in the second column
+        layout.addWidget(submit_button, 3, 1) # The button is in the third column
+        # Create a QWidget to hold the QGridLayout
+        grid_widget = QWidget()
+        grid_widget.setLayout(layout)
+        # Set the maximum width of the QWidget
+        grid_widget.setMaximumWidth(800)
+        # Create a QHBoxLayout
+        hbox = QHBoxLayout()
+        # Add spacers to the left and right of the grid_widget
+        hbox.addItem(QSpacerItem(20, 40, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        hbox.addWidget(grid_widget)
+        hbox.addItem(QSpacerItem(20, 40, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        # Add the QHBoxLayout to the main layout
+        main_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
+        main_layout.addLayout(hbox)
+        main_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
+        self.setLayout(main_layout)
 
-        if not self.api_key:
-            self.api_key, ok = QInputDialog.getText(self, 'API Key', '请输入 API Key:')
-            if ok:
-                try:
-                    with open(preset_json, 'r+') as f:
-                        presets = json.load(f)
-                        presets['api_key'] = self.api_key
-                        f.seek(0)
-                        json.dump(presets, f)
-                        f.truncate()
-                except FileNotFoundError:
-                    with open(preset_json, 'w') as f:
-                        json.dump({'api_key': self.api_key}, f)
+    def submit_api_key(self):
+        self.api_key = self.api_key_edit.text()
+        # Save the API key to a file
+        with open(api_key_file, 'w') as f:
+            json.dump({'RUNPOD_API_KEY': self.api_key}, f)
+        # Clear the current layout
+        self.clear_layout(self.layout())
+        # get gpu types
+        self.gpu_types = sorted(get_gpu_types(), key=lambda gpu: gpu['memoryInGb'])
+        # Load the main UI
+        self.initUI()
+        # self.setMinimumSize(1200, 800)
 
     def initUI(self):
         layout = QGridLayout()
@@ -232,7 +271,7 @@ class GPUSelector(QWidget):
         if self.spot_radio.isChecked():
             command.append('--spot')
         try:
-            result = subprocess.run(command, cwd=api_dir, capture_output=True, text=True)
+            result = subprocess.run(command, cwd=current_path, capture_output=True, text=True)
         except Exception as e:
             print(f"Error running create_pod.py: {e}")
 
@@ -284,6 +323,7 @@ class GPUSelector(QWidget):
             f"{pod_info['podType']} - {pod_info['costPerHr']}<br>"
             f"{pod_info['imageName']}"
         )
+        pod_info_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         pod_info_label.setFixedWidth(500)
         pod_layout.addWidget(pod_info_label)
         pod_layout.setAlignment(Qt.AlignLeft)
@@ -291,13 +331,13 @@ class GPUSelector(QWidget):
         self.pod_status_layout.addWidget(pod_group)
 
     def get_pods(self):
-        result = subprocess.run(['python', 'get_pods.py'], cwd=api_dir, capture_output=True, text=True)
+        result = subprocess.run(['python', 'get_pods.py'], cwd=current_path, capture_output=True, text=True)
         pod_info = json.loads(result.stdout) if result.stdout.strip() else []
         return pod_info
 
     def stop_pod(self, pod_info, stop_button):
         pod_id = pod_info['id']
-        subprocess.run(['python', os.path.join(api_dir, 'stop_pod.py'), '--pod_id', str(pod_id)])
+        subprocess.run(['python', os.path.join(current_path, 'stop_pod.py'), '--pod_id', str(pod_id)])
         # Update the stop button to a start button
         stop_button.setText('开始')
         stop_button.clicked.connect(lambda: self.start_pod(pod_info, stop_button))
@@ -309,9 +349,9 @@ class GPUSelector(QWidget):
         if spot:
             bid_price = str(pod_info['costPerHr'])
             # bid_price = str(pod_info['lowestBidPriceToResume'])
-            subprocess.run(['python', 'start_spot_pod.py', '--pod_id', str(pod_id), '--bid_price', bid_price], cwd=api_dir)
+            subprocess.run(['python', 'start_spot_pod.py', '--pod_id', str(pod_id), '--bid_price', bid_price], cwd=current_path)
         else:
-            subprocess.run(['python', os.path.join(api_dir, 'start_on_demand_pod.py'), '--pod_id', str(pod_id)])
+            subprocess.run(['python', os.path.join(current_path, 'start_on_demand_pod.py'), '--pod_id', str(pod_id)])
         # Update the start button to a stop button
         stop_button.setText('停止')
         self.update_groupbox_color(stop_button.parent(), 'RUNNING')
@@ -343,11 +383,11 @@ class GPUSelector(QWidget):
         self.update_pods_in_ui(pod_infos)
 
     def terminate_pod(self, pod_id, pod_layout):
-        subprocess.run(['python', os.path.join(api_dir, 'terminate_pod.py'), '--pod_id', str(pod_id)])
+        subprocess.run(['python', os.path.join(current_path, 'terminate_pod.py'), '--pod_id', str(pod_id)])
         self.refresh_pods()
 
     def delete_all_pods(self):
-        subprocess.run(['python', os.path.join(api_dir, 'terminate_all_pods.py')])
+        subprocess.run(['python', os.path.join(current_path, 'terminate_all_pods.py')])
         self.refresh_pods()
 
     # def toggle_api_key_visibility(self):

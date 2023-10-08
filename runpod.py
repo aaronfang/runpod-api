@@ -8,7 +8,20 @@ class API(object):
     def __init__(self):
         # env = dotenv_values('.env')
         # self.API_KEY = env['RUNPOD_API_KEY']
-        self.API_KEY = os.environ['RUNPOD_API_KEY']
+        self.API_KEY = self.get_api_key()
+
+    def get_api_key(self):
+        # First, try to get the API key from the environment variables
+        api_key = os.getenv('RUNPOD_API_KEY')
+        if not api_key:
+            # If the API key is not in the environment variables, try to get it from the file
+            try:
+                with open('api_key.json', 'r') as f:
+                    data = json.load(f)
+                    api_key = data.get('RUNPOD_API_KEY')
+            except FileNotFoundError:
+                pass
+        return api_key
 
     def _run_query(self, payload, auth_required=False):
         url = 'https://api.runpod.io/graphql'
