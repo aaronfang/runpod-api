@@ -14,7 +14,7 @@ preset_json = os.path.join(current_path, 'runpod_presets.json')
 api_key_file = os.path.join(current_path, 'api_key.json')
 
 from get_gpu_types import get_gpu_types
-from get_templates import get_latest_tags
+from get_templates import get_latest_tags, get_all_tags
 
 
 class CustomComboBox(QComboBox):
@@ -126,11 +126,13 @@ class GPUSelector(QWidget):
         self.image_combo = QComboBox()
         self.image_combo.setMaxVisibleItems(10)
         self.image_combo.setFixedHeight(40)
+        self.image_combo.setMaxVisibleItems(30)
         layout.addWidget(QLabel('镜像名:'), 1, 0)
         layout.addWidget(self.image_combo, 1, 1)
-        repo = 'runpod/stable-diffusion'
-        latest_tags = get_latest_tags(repo)
-        for tag in latest_tags:
+        repo_sd_tags = get_latest_tags('runpod/stable-diffusion')
+        repo_torch_tags = get_all_tags('runpod/pytorch')
+        tags = repo_torch_tags + repo_sd_tags
+        for tag in tags:
             self.image_combo.addItem(tag)
 
         layout.addWidget(QLabel('GPU 信息:'), 2, 0)
@@ -244,7 +246,7 @@ class GPUSelector(QWidget):
                 gpu['communityPrice'] = ' -' if not gpu.get('communityCloud', False) else gpu.get('communityPrice', ' -')
                 gpu['lowestPrice']['minimumBidPrice'] = ' -' if gpu['lowestPrice']['minimumBidPrice'] is None else gpu['lowestPrice']['minimumBidPrice']
                 gpu_info = (
-                    f"{gpu['id']:<30}  |  {gpu['memoryInGb']:<2} GB  |  Max: {gpu['maxGpuCount']:<2}  |  "
+                    f"{gpu['id']:<34}  |  {gpu['memoryInGb']:<2} GB  |  Max: {gpu['maxGpuCount']:<2}  |  "
                     f"Secure: {gpu['securePrice']:<4}  |  "
                     f"Community: {gpu['communityPrice']:<4}  |  "
                     f"bid: {gpu['lowestPrice']['minimumBidPrice']:<4}"

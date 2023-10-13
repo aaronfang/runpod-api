@@ -27,7 +27,21 @@ def get_latest_tags(repo):
 
     return latest_tags
 
-# repo = 'runpod/stable-diffusion'
-# latest_tags = get_latest_tags(repo)
-# for tag in latest_tags:
+def get_all_tags(repo):
+    tags = get_docker_image_tags(repo)
+    all_tags = []
+
+    # 将所有标签添加到列表中
+    for tag in tags:
+        all_tags.append(f'{repo}:{tag["name"]}')
+
+    # 对所有标签进行排序
+    all_tags = sorted(all_tags)
+
+    return all_tags
+
+# repo_torch_tags = get_all_tags('runpod/pytorch')
+# repo_sd_tags = get_latest_tags('runpod/stable-diffusion')
+# tags = repo_torch_tags + repo_sd_tags
+# for tag in tags:
 #     print(tag)
