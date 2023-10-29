@@ -102,6 +102,10 @@ class GPUSelector(QWidget):
         # self.setMinimumSize(1200, 800)
 
     def initUI(self):
+        # Set the font to Courier New with size 12
+        font = QFont('Cascadia Code', 12)
+        self.setFont(font)
+
         layout = QGridLayout()
 
         preset_group = QGroupBox('预设:')
@@ -140,6 +144,7 @@ class GPUSelector(QWidget):
         self.gpu_combo = CustomComboBox(self)
         self.gpu_combo.setMaxVisibleItems(30)
         self.gpu_combo.setFixedHeight(40)
+        self.gpu_combo.setFont(font)
         self.update_gpu_types()
         layout.addWidget(self.gpu_combo, 2, 1, 1, 3)
 
