@@ -7,6 +7,7 @@ import datetime
 from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QCheckBox, QLabel, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QRadioButton, QButtonGroup, QScrollArea, QHBoxLayout, QGroupBox, QInputDialog, QStyle, QSpacerItem, QSizePolicy
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
+from PyQt5.QtCore import QThread, pyqtSignal
 
 # Add runpod-api to the path
 current_path = os.path.dirname(os.path.abspath(__file__))
@@ -16,6 +17,19 @@ api_key_file = os.path.join(current_path, 'api_key.json')
 from get_gpu_types import get_gpu_types
 from get_templates import get_latest_tags, get_all_tags
 
+
+class PodRefresher(QThread):
+    podsRefreshed = pyqtSignal(list)
+
+    def __init__(self, get_pods):
+        super().__init__()
+        self.get_pods = get_pods
+
+    def run(self):
+        while True:
+            pod_infos = self.get_pods()
+            self.podsRefreshed.emit(pod_infos)
+            self.sleep(5)  # Sleep for 5 seconds
 
 class CustomComboBox(QComboBox):
     def __init__(self, parent=None):
@@ -40,6 +54,11 @@ class GPUSelector(QWidget):
             self.initApiKeyUI()
         else:
             self.initUI()
+        
+        # Create a PodRefresher object and move it to a new thread
+        self.pod_refresher = PodRefresher(self.get_pods)
+        self.pod_refresher.podsRefreshed.connect(self.update_pods_in_ui)
+        self.pod_refresher.start()
 
     def get_api_key(self):
         api_key = os.getenv('RUNPOD_API_KEY')
@@ -339,7 +358,11 @@ class GPUSelector(QWidget):
 
     def get_pods(self):
         result = subprocess.run(['python', 'get_pods.py'], cwd=current_path, capture_output=True, text=True)
-        pod_info = json.loads(result.stdout) if result.stdout.strip() else []
+        try:
+            pod_info = json.loads(result.stdout) if result.stdout.strip() else []
+        except json.JSONDecodeError:
+            print(f"Error parsing JSON: {result.stdout}")
+            pod_info = []
         return pod_info
 
     def stop_pod(self, pod_info, stop_button):
@@ -379,7 +402,13 @@ class GPUSelector(QWidget):
                 self.clear_layout(child.layout())
 
     def update_pods_in_ui(self, pod_infos):
-        pod_infos = sorted(pod_infos, key=lambda pod: datetime.datetime.strptime(" ".join(pod['name'].rsplit(" ", 2)[-2:]), "%Y-%m-%d %H:%M:%S"))
+        def sort_key(pod):
+            try:
+                return datetime.datetime.strptime(" ".join(pod['name'].rsplit(" ", 2)[-2:]), "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                return pod['name']
+
+        pod_infos = sorted(pod_infos, key=sort_key)
 
         self.clear_layout(self.pod_status_layout)
         for pod_info in pod_infos:
