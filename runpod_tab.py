@@ -55,10 +55,10 @@ class GPUSelector(QWidget):
         else:
             self.initUI()
         
-        # Create a PodRefresher object and move it to a new thread
-        self.pod_refresher = PodRefresher(self.get_pods)
-        self.pod_refresher.podsRefreshed.connect(self.update_pods_in_ui)
-        self.pod_refresher.start()
+            # Create a PodRefresher object and move it to a new thread
+            self.pod_refresher = PodRefresher(self.get_pods)
+            self.pod_refresher.podsRefreshed.connect(self.update_pods_in_ui)
+            self.pod_refresher.start()
 
     def get_api_key(self):
         api_key = os.getenv('RUNPOD_API_KEY')
@@ -119,6 +119,11 @@ class GPUSelector(QWidget):
         # Load the main UI
         self.initUI()
         # self.setMinimumSize(1200, 800)
+        
+        # Start the PodRefresher thread
+        self.pod_refresher = PodRefresher(self.get_pods)
+        self.pod_refresher.podsRefreshed.connect(self.update_pods_in_ui)
+        self.pod_refresher.start()
 
     def initUI(self):
         # Set the font to Courier New with size 12
