@@ -107,23 +107,32 @@ class GPUSelector(QWidget):
         main_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
         self.setLayout(main_layout)
 
+    def stop_pod_refresher(self):
+        if hasattr(self, 'pod_refresher'):
+            self.pod_refresher.terminate()
+            self.pod_refresher.wait()
+
     def submit_api_key(self):
-        self.api_key = self.api_key_edit.text()
-        # Save the API key to a file
-        with open(api_key_file, 'w') as f:
-            json.dump({'RUNPOD_API_KEY': self.api_key}, f)
-        # Clear the current layout
-        self.clear_layout(self.layout())
-        # get gpu types
-        self.gpu_types = sorted(get_gpu_types(), key=lambda gpu: gpu['memoryInGb'])
-        # Load the main UI
-        self.initUI()
-        # self.setMinimumSize(1200, 800)
-        
-        # Start the PodRefresher thread
-        self.pod_refresher = PodRefresher(self.get_pods)
-        self.pod_refresher.podsRefreshed.connect(self.update_pods_in_ui)
-        self.pod_refresher.start()
+        try:
+            self.api_key = self.api_key_edit.text()
+            # Save the API key to a file
+            with open(api_key_file, 'w') as f:
+                json.dump({'RUNPOD_API_KEY': self.api_key}, f)
+            # Clear the current layout
+            self.clear_layout(self.layout())
+            # get gpu types
+            self.gpu_types = sorted(get_gpu_types(), key=lambda gpu: gpu['memoryInGb'])
+            # Load the main UI
+            self.initUI()
+            # self.setMinimumSize(1200, 800)
+            
+            # Start the PodRefresher thread
+            self.stop_pod_refresher()
+            self.pod_refresher = PodRefresher(self.get_pods)
+            self.pod_refresher.podsRefreshed.connect(self.update_pods_in_ui)
+            self.pod_refresher.start()
+        except Exception as e:
+            print(f"Error in submit_api_key: {e}")
 
     def initUI(self):
         # Set the font to Courier New with size 12
