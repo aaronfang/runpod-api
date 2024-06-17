@@ -2,7 +2,7 @@ import requests
 from collections import defaultdict
 
 def get_docker_image_tags(repo):
-    r = requests.get(f'https://registry.hub.docker.com/v2/repositories/{repo}/tags')
+    r = requests.get(f'https://registry.hub.docker.com/v2/repositories/{repo}/tags?page_size=100')
     return r.json()['results']
 
 def get_latest_tags(repo):
